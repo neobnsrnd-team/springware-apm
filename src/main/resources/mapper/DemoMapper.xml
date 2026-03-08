@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.springware.profiler.demo.problem.mapper.DemoMapper">
+
+    <select id="findAll" resultType="kr.springware.profiler.demo.problem.model.DemoItem">
+        SELECT id, name, category, price, created_at FROM demo_item
+    </select>
+
+    <select id="findByCategory" resultType="kr.springware.profiler.demo.problem.model.DemoItem">
+        SELECT id, name, category, price, created_at FROM demo_item WHERE category = #{category}
+    </select>
+
+    <select id="findAllCategories" resultType="string">
+        SELECT DISTINCT category FROM demo_item
+    </select>
+
+</mapper>
