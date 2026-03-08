@@ -3,6 +3,7 @@ package kr.springware.profiler.core.config;
 import kr.springware.profiler.core.dashboard.DashboardController;
 import kr.springware.profiler.core.detector.ThresholdDetector;
 import kr.springware.profiler.core.filter.ProfilingFilter;
+import kr.springware.profiler.core.monitor.ActiveThreadTracker;
 import kr.springware.profiler.core.monitor.CpuMonitor;
 import kr.springware.profiler.core.monitor.MemoryMonitor;
 import kr.springware.profiler.core.monitor.MonitoringScheduler;
@@ -38,14 +39,21 @@ public class ProfilerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public ActiveThreadTracker activeThreadTracker() {
+        return new ActiveThreadTracker();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public ThresholdDetector thresholdDetector(ProfilerConfig config, ProfileEventStore store, MemoryMonitor memoryMonitor) {
         return new ThresholdDetector(config, store, memoryMonitor);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ProfilingFilter profilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor, ThresholdDetector detector) {
-        return new ProfilingFilter(cpuMonitor, memoryMonitor, detector);
+    public ProfilingFilter profilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor,
+                                              ThresholdDetector detector, ActiveThreadTracker threadTracker) {
+        return new ProfilingFilter(cpuMonitor, memoryMonitor, detector, threadTracker);
     }
 
     @Bean
@@ -57,7 +65,8 @@ public class ProfilerAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public DashboardController dashboardController(ProfileEventStore store, CpuMonitor cpuMonitor,
-                                                     MemoryMonitor memoryMonitor, ProfilerConfig config) {
-        return new DashboardController(store, cpuMonitor, memoryMonitor, config);
+                                                     MemoryMonitor memoryMonitor, ProfilerConfig config,
+                                                     ActiveThreadTracker threadTracker) {
+        return new DashboardController(store, cpuMonitor, memoryMonitor, config, threadTracker);
     }
 }

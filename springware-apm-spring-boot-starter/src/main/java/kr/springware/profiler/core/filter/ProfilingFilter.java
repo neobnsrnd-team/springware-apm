@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.springware.profiler.core.detector.ThresholdDetector;
+import kr.springware.profiler.core.monitor.ActiveThreadTracker;
 import kr.springware.profiler.core.monitor.CpuMonitor;
 import kr.springware.profiler.core.monitor.MemoryMonitor;
 import org.springframework.core.Ordered;
@@ -19,11 +20,14 @@ public class ProfilingFilter extends OncePerRequestFilter {
     private final CpuMonitor cpuMonitor;
     private final MemoryMonitor memoryMonitor;
     private final ThresholdDetector detector;
+    private final ActiveThreadTracker threadTracker;
 
-    public ProfilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor, ThresholdDetector detector) {
+    public ProfilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor,
+                           ThresholdDetector detector, ActiveThreadTracker threadTracker) {
         this.cpuMonitor = cpuMonitor;
         this.memoryMonitor = memoryMonitor;
         this.detector = detector;
+        this.threadTracker = threadTracker;
     }
 
     @Override
@@ -42,6 +46,12 @@ public class ProfilingFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        String endpoint = request.getMethod() + " " + request.getRequestURI();
+        if (request.getQueryString() != null) {
+            endpoint += "?" + request.getQueryString();
+        }
+
+        threadTracker.register(endpoint);
         long startTime = System.currentTimeMillis();
         long startCpuTime = cpuMonitor.getCurrentThreadCpuTimeNanos();
         long startHeap = memoryMonitor.getHeapUsage().getUsed();
@@ -49,14 +59,10 @@ public class ProfilingFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
+            threadTracker.unregister();
             long elapsedMs = System.currentTimeMillis() - startTime;
             long cpuTimeNanos = cpuMonitor.getCurrentThreadCpuTimeNanos() - startCpuTime;
             long heapDelta = memoryMonitor.getHeapUsage().getUsed() - startHeap;
-
-            String endpoint = request.getMethod() + " " + request.getRequestURI();
-            if (request.getQueryString() != null) {
-                endpoint += "?" + request.getQueryString();
-            }
 
             detector.evaluateRequest(
                     endpoint,
