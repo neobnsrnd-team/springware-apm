@@ -1,6 +1,6 @@
 # Springware APM - xLog Tracer
 
-A lightweight Java profiler with a Scouter APM-style **xLog scatter chart** dashboard. Detects CPU, slow execution, and memory issues in real-time via servlet filter profiling, periodic monitoring, and threshold-based alerting.
+A lightweight Java profiler with a Scouter APM-style **xLog scatter chart** dashboard. Detects CPU, slow execution, and memory issues in real-time via servlet filter profiling, periodic monitoring, and threshold-based alerting. Includes **CPU/Memory/Active Threads line chart** and **live thread dump** viewer for API-processing threads.
 
 ## xLog Dashboard
 
@@ -16,6 +16,8 @@ A lightweight Java profiler with a Scouter APM-style **xLog scatter chart** dash
 - **Periodic memory monitoring** with `@Scheduled` system heap checks
 - **Threshold-based alerting** with severity escalation (WARNING / CRITICAL)
 - **xLog scatter chart** - real-time response time visualization (X=time, Y=elapsed)
+- **CPU/Memory/Threads line chart** - 2-minute sliding window with dual Y-axes (% and thread count)
+- **Active thread dump** - click Threads pill or legend to view live stack traces of API-processing threads
 - **Color-coded events** - Normal (cyan), Warning (orange), Critical (red), Error (magenta)
 - **Trigger buttons** to fire intentional CPU, slow execution, and memory problems
 - **Reusable core module** (`kr.springware.profiler.core`) separated from demo app
@@ -56,7 +58,8 @@ Open [http://localhost:8080](http://localhost:8080) to see the xLog dashboard.
 |----------|-------------|
 | `GET /api/profiler/events` | List all profiler events (filterable by category/severity) |
 | `GET /api/profiler/summary` | Aggregated counts by category and severity |
-| `GET /api/profiler/status` | Live system health (heap, CPU, event count) |
+| `GET /api/profiler/status` | Live system health (heap, CPU, active threads, event count) |
+| `GET /api/profiler/threads` | Active API thread dump (endpoint, elapsed, state, stack trace) |
 | `DELETE /api/profiler/events` | Clear event history |
 
 ## Test Results
@@ -88,7 +91,7 @@ kr.springware.profiler
 │   ├── config/ProfilerConfig      # @ConfigurationProperties thresholds
 │   ├── filter/ProfilingFilter     # Per-request servlet filter
 │   ├── detector/ThresholdDetector # Threshold evaluation & severity
-│   ├── monitor/                   # CPU & memory monitors
+│   ├── monitor/                   # CPU, memory & active thread monitors
 │   ├── store/ProfileEventStore    # Thread-safe event ring buffer
 │   ├── model/                     # ProfileEvent, enums
 │   └── dashboard/DashboardController  # REST API
