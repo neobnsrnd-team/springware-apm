@@ -108,12 +108,23 @@ kr.springware.profiler
 
 ```properties
 # Thresholds
-profiler.threshold.response-time-ms=3000
-profiler.threshold.cpu-percent=80
-profiler.threshold.memory-percent=85
-profiler.threshold.memory-spike-mb=50
+profiler.threshold.response-time-ms=3000   # Slow response threshold (default: 3000ms)
+profiler.threshold.cpu-percent=80           # CPU usage alert threshold (default: 80%)
+profiler.threshold.memory-percent=85        # Heap usage alert threshold (default: 85%)
+profiler.threshold.memory-spike-mb=50       # Memory spike threshold (default: 50MB)
 
 # Monitoring
-profiler.monitoring-interval-ms=5000
-profiler.max-events=1000
+profiler.monitoring-interval-ms=5000        # System health check interval (default: 5000ms)
+profiler.max-events=1000                    # Max events in ring buffer (default: 1000)
+profiler.collect-mode=all                   # "all" or "issues-only" (default: all)
 ```
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `profiler.threshold.response-time-ms` | `3000` | Requests exceeding this are flagged as slow |
+| `profiler.threshold.cpu-percent` | `80` | Per-request CPU usage alert threshold |
+| `profiler.threshold.memory-percent` | `85` | Heap usage percentage alert threshold |
+| `profiler.threshold.memory-spike-mb` | `50` | Per-request heap delta alert threshold |
+| `profiler.monitoring-interval-ms` | `5000` | Periodic system health check interval |
+| `profiler.max-events` | `1000` | Maximum events kept in ring buffer |
+| `profiler.collect-mode` | `all` | `all` records every request, `issues-only` records only threshold violations |
