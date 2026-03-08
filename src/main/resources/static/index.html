@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XLog Profiler - Scouter Style</title>
+    <title>Springware APM - xLog Tracer</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; }
@@ -18,7 +18,7 @@
             justify-content: space-between;
             border-bottom: 1px solid #0f3460;
         }
-        .top-bar h1 { font-size: 18px; color: #00d4ff; font-weight: 600; }
+        .top-bar h1 { font-size: 18px; font-weight: 600; }
         .top-bar .status-pills { display: flex; gap: 12px; }
         .pill {
             padding: 4px 12px;
@@ -231,7 +231,7 @@
 <body>
 
 <div class="top-bar">
-    <h1>XLog Profiler</h1>
+    <h1><span style="color:#00ff88">Spring</span><span style="color:#ffa500">ware</span> <span style="color:#e0e0e0">APM</span> - <span style="color:#aaa">x</span><span style="color:#00d4ff">Log</span> <span style="color:#e0e0e0">Tracer</span></h1>
     <div class="status-pills">
         <span class="pill cpu" id="pillCpu">CPU: --</span>
         <span class="pill heap" id="pillHeap">Heap: --</span>
@@ -243,7 +243,7 @@
     <!-- XLog Scatter Chart -->
     <div class="xlog-panel">
         <div class="xlog-header">
-            <h2>XLog - Response Time Scatter</h2>
+            <h2>xLog - Response Time Scatter</h2>
             <div class="xlog-controls">
                 <div class="scale-selector">
                     <label style="font-size:11px;color:#666;">Y-Max:</label>

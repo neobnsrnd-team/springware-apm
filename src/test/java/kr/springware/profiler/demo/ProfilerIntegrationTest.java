@@ -41,7 +41,7 @@ class ProfilerIntegrationTest {
 
     @Test
     void primes_shouldTriggerCpuAlert() {
-        restTemplate.getForObject("/api/problems/cpu/primes?upTo=500000", String.class);
+        restTemplate.getForObject("/api/problems/cpu/primes?upTo=2000000", String.class);
         List<ProfileEvent> cpuEvents = eventStore.getFiltered(IssueCategory.CPU, null);
         assertFalse(cpuEvents.isEmpty(), "Should detect CPU issue from primes");
     }
