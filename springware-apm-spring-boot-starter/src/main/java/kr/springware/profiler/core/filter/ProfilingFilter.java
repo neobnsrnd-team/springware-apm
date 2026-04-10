@@ -32,7 +32,8 @@ public class ProfilingFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
+        // Use servletPath (context-path stripped) so this works under any deploy context
+        String path = request.getServletPath();
         return path.startsWith("/api/profiler")
                 || path.startsWith("/h2-console")
                 || path.equals("/")

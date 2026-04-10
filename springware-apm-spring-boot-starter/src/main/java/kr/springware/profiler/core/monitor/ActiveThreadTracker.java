@@ -15,12 +15,12 @@ public class ActiveThreadTracker {
 
     public void register(String endpoint) {
         Thread t = Thread.currentThread();
-        activeRequests.put(t.threadId(), new RequestInfo(
-                t.threadId(), t.getName(), endpoint, System.currentTimeMillis()));
+        activeRequests.put(t.getId(), new RequestInfo(
+                t.getId(), t.getName(), endpoint, System.currentTimeMillis()));
     }
 
     public void unregister() {
-        activeRequests.remove(Thread.currentThread().threadId());
+        activeRequests.remove(Thread.currentThread().getId());
     }
 
     public int getActiveCount() {

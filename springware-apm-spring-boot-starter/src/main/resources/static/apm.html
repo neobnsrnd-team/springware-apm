@@ -512,6 +512,48 @@
     let selectedEvent = null;
     let activeFilters = new Set();
 
+    // Persisted UI settings (localStorage)
+    const STORAGE_KEY = 'springware-apm.ui';
+    function loadSettings() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const s = JSON.parse(raw);
+            if (typeof s.yMax === 'number') {
+                yMax = s.yMax;
+                const sel = document.getElementById('yMaxSelect');
+                if (sel) sel.value = String(s.yMax);
+            }
+            if (typeof s.paused === 'boolean') {
+                paused = s.paused;
+                const btn = document.getElementById('btnPause');
+                if (btn) {
+                    btn.textContent = paused ? 'Resume' : 'Pause';
+                    btn.classList.toggle('active', paused);
+                }
+            }
+            if (Array.isArray(s.activeFilters)) {
+                activeFilters = new Set(s.activeFilters);
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    if (activeFilters.has(btn.dataset.filter)) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+        } catch(e) { /* ignore */ }
+    }
+    function saveSettings() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                yMax: yMax,
+                paused: paused,
+                activeFilters: Array.from(activeFilters)
+            }));
+        } catch(e) { /* ignore */ }
+    }
+
     function filteredEvents() {
         if (activeFilters.size === 0) return allEvents;
         return allEvents.filter(e => activeFilters.has(e.category));
@@ -908,7 +950,7 @@
     async function fetchEvents() {
         if (paused) return;
         try {
-            const res = await fetch('/api/profiler/events');
+            const res = await fetch('api/profiler/events');
             const data = await res.json();
             allEvents = data;
             renderEventList();
@@ -918,7 +960,7 @@
     // Fetch status
     async function fetchStatus() {
         try {
-            const res = await fetch('/api/profiler/status');
+            const res = await fetch('api/profiler/status');
             const s = await res.json();
             document.getElementById('pillCpu').textContent = `CPU: ${s.cpuProcess >= 0 ? s.cpuProcess + '%' : 'N/A'}`;
             document.getElementById('pillHeap').textContent = `Heap: ${s.heapUsedMb}/${s.heapMaxMb}MB (${s.heapPercent}%)`;
@@ -967,7 +1009,7 @@
     document.getElementById('btnCollectMode').addEventListener('click', async function() {
         const current = this.textContent.trim();
         const newMode = current === 'All' ? 'issues-only' : 'all';
-        await fetch('/api/profiler/collect-mode?mode=' + newMode, { method: 'POST' });
+        await fetch('api/profiler/collect-mode?mode=' + newMode, { method: 'POST' });
         fetchStatus();
     });
 
@@ -982,6 +1024,7 @@
                 activeFilters.add(cat);
                 this.classList.add('active');
             }
+            saveSettings();
             renderEventList();
         });
     });
@@ -991,10 +1034,11 @@
         paused = !paused;
         this.textContent = paused ? 'Resume' : 'Pause';
         this.classList.toggle('active', paused);
+        saveSettings();
     });
 
     document.getElementById('btnClear').addEventListener('click', async function() {
-        await fetch('/api/profiler/events', { method: 'DELETE' });
+        await fetch('api/profiler/events', { method: 'DELETE' });
         allEvents = [];
         selectedEvent = null;
         document.getElementById('eventDetail').classList.remove('active');
@@ -1003,6 +1047,7 @@
 
     document.getElementById('yMaxSelect').addEventListener('change', function() {
         yMax = parseInt(this.value);
+        saveSettings();
     });
 
     function escapeHtml(str) {
@@ -1018,7 +1063,7 @@
         modal.classList.add('active');
         body.innerHTML = '<div class="thread-empty">Loading...</div>';
         try {
-            const res = await fetch('/api/profiler/threads');
+            const res = await fetch('api/profiler/threads');
             const threads = await res.json();
             if (threads.length === 0) {
                 body.innerHTML = '<div class="thread-empty">No active API threads</div>';
@@ -1070,6 +1115,7 @@
     });
 
     // Init
+    loadSettings();
     resizeCanvas();
     resizeLineCanvas();
     window.addEventListener('resize', function() { resizeCanvas(); resizeLineCanvas(); });
