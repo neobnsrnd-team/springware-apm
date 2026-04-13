@@ -24,7 +24,7 @@ A lightweight Java profiler with a Scouter APM-style **xLog scatter chart** dash
 
 ## Tech Stack
 
-- Spring Boot 3.4.3 / Java 21
+- Spring Boot 3.4.3 / Java 17
 - MyBatis 3.0.4 / H2 (in-memory)
 - Vanilla HTML/CSS/JS dashboard (no frontend framework)
 - Gradle 9.3.1
@@ -35,7 +35,9 @@ A lightweight Java profiler with a Scouter APM-style **xLog scatter chart** dash
 ./gradlew bootRun
 ```
 
-Open [http://localhost:8080](http://localhost:8080) to see the xLog dashboard.
+Open the dashboard at [http://localhost:8080/api/profiler/dashboard](http://localhost:8080/api/profiler/dashboard).
+
+> The dashboard HTML is served directly by `DashboardController`, so it works under any deployment context path and in environments where serving static resources is restricted.
 
 ## Problem Endpoints
 
@@ -56,10 +58,12 @@ Open [http://localhost:8080](http://localhost:8080) to see the xLog dashboard.
 
 | Endpoint | Description |
 |----------|-------------|
+| `GET /api/profiler/dashboard` | xLog dashboard HTML (served by controller, context-path safe) |
 | `GET /api/profiler/events` | List all profiler events (filterable by category/severity) |
 | `GET /api/profiler/summary` | Aggregated counts by category and severity |
 | `GET /api/profiler/status` | Live system health (heap, CPU, active threads, event count) |
 | `GET /api/profiler/threads` | Active API thread dump (endpoint, elapsed, state, stack trace) |
+| `POST /api/profiler/collect-mode?mode=all\|issues-only` | Change collection mode at runtime |
 | `DELETE /api/profiler/events` | Clear event history |
 
 ## Test Results
