@@ -22,12 +22,13 @@
 ## 3. 반입 절차
 
 ### 3-1. JAR 배치
-업무 프로젝트 루트에 `libs/` 디렉터리를 만들고 JAR 파일을 복사합니다.
+업무 프로젝트의 라이브러리 디렉터리에 JAR 파일을 복사합니다.
+디렉터리명은 프로젝트 관례에 따라 `lib/` 또는 `libs/`를 사용합니다.
 
 ```
 <업무 프로젝트>/
 ├── build.gradle
-├── libs/
+├── lib/          ← 또는 libs/ (프로젝트 관례에 따름)
 │   └── springware-apm-spring-boot-starter-1.0.0-<빌드타임스탬프>.jar
 └── src/
 ```
@@ -35,11 +36,13 @@
 ### 3-2. Gradle 의존성 추가
 
 `build.gradle`의 `dependencies` 블록에 다음 한 줄을 추가합니다.
+**⚠️ `dir` 값이 실제 JAR를 넣은 디렉터리명과 반드시 일치해야 합니다.**
 
 ```gradle
 dependencies {
     // Springware APM (로컬 JAR — 버전 무관하게 매칭)
-    implementation fileTree(dir: 'libs', include: ['springware-apm-spring-boot-starter-*.jar'])
+    // dir 값을 실제 디렉터리명에 맞추세요: 'lib' 또는 'libs'
+    implementation fileTree(dir: 'lib', include: ['springware-apm-spring-boot-starter-*.jar'])
 
     // ... 기존 의존성들 ...
 }
@@ -144,9 +147,11 @@ GET http://<host>:<port>/{ctx}/api/profiler/threads
 
 ### 4-5. 대시보드 (내장 HTML)
 ```
-http://<host>:<port>/{ctx}/apm.html
+http://<host>:<port>/{ctx}/api/profiler/dashboard
 ```
 xLog scatter chart, CPU/Memory 라인 차트, 이벤트 리스트, 스레드 덤프 모달을 포함한 실시간 대시보드입니다.
+
+> **참고:** 이전 버전의 `/apm.html` 정적 리소스 경로는 업무 시스템의 WebMvc 설정에 따라 동작하지 않을 수 있습니다. `/api/profiler/dashboard`는 컨트롤러가 직접 서빙하므로 환경과 무관하게 동작합니다.
 
 ## 5. 제공되는 REST API 전체 목록
 

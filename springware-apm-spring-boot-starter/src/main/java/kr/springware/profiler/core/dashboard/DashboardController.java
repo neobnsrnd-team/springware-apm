@@ -8,8 +8,13 @@ import kr.springware.profiler.core.monitor.ActiveThreadTracker;
 import kr.springware.profiler.core.monitor.CpuMonitor;
 import kr.springware.profiler.core.monitor.MemoryMonitor;
 import kr.springware.profiler.core.store.ProfileEventStore;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +22,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/profiler")
 public class DashboardController {
+
+    @GetMapping(value = "/dashboard", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> dashboard() throws IOException {
+        ClassPathResource resource = new ClassPathResource("static/apm.html");
+        String html = resource.getContentAsString(StandardCharsets.UTF_8);
+        return ResponseEntity.ok(html);
+    }
 
     private final ProfileEventStore store;
     private final CpuMonitor cpuMonitor;

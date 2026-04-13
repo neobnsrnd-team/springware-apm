@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  kr.springware.profiler.core.config.ProfilerAutoConfiguration

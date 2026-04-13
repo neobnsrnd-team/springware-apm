@@ -8,6 +8,9 @@ import kr.springware.profiler.core.monitor.CpuMonitor;
 import kr.springware.profiler.core.monitor.MemoryMonitor;
 import kr.springware.profiler.core.monitor.MonitoringScheduler;
 import kr.springware.profiler.core.store.ProfileEventStore;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -18,6 +21,17 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties(ProfilerConfig.class)
 @EnableScheduling
 public class ProfilerAutoConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(ProfilerAutoConfiguration.class);
+
+    @PostConstruct
+    public void init() {
+        log.info("============================================================");
+        log.info(" Springware APM Profiler initialized");
+        log.info(" Dashboard: /apm.html");
+        log.info(" API:       /api/profiler/status");
+        log.info("============================================================");
+    }
 
     @Bean
     @ConditionalOnMissingBean
