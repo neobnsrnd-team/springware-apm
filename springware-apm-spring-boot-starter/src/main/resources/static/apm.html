@@ -512,6 +512,14 @@
     let selectedEvent = null;
     let activeFilters = new Set();
 
+    // Base path - derive from current page to support any context path
+    // Supports both /api/profiler/dashboard and /apm.html access patterns
+    const basePath = location.pathname
+        .replace(/\/api\/profiler\/dashboard\/?$/, '')
+        .replace(/\/apm\.html$/, '')
+        .replace(/\/apm\.html\/$/, '') || '';
+    const apiPrefix = (basePath === '/' ? '' : basePath) + '/api/profiler';
+
     // Persisted UI settings (localStorage)
     const STORAGE_KEY = 'springware-apm.ui';
     function loadSettings() {
@@ -950,7 +958,7 @@
     async function fetchEvents() {
         if (paused) return;
         try {
-            const res = await fetch('api/profiler/events');
+            const res = await fetch(apiPrefix + '/events');
             const data = await res.json();
             allEvents = data;
             renderEventList();
@@ -960,7 +968,7 @@
     // Fetch status
     async function fetchStatus() {
         try {
-            const res = await fetch('api/profiler/status');
+            const res = await fetch(apiPrefix + '/status');
             const s = await res.json();
             document.getElementById('pillCpu').textContent = `CPU: ${s.cpuProcess >= 0 ? s.cpuProcess + '%' : 'N/A'}`;
             document.getElementById('pillHeap').textContent = `Heap: ${s.heapUsedMb}/${s.heapMaxMb}MB (${s.heapPercent}%)`;
@@ -1009,7 +1017,7 @@
     document.getElementById('btnCollectMode').addEventListener('click', async function() {
         const current = this.textContent.trim();
         const newMode = current === 'All' ? 'issues-only' : 'all';
-        await fetch('api/profiler/collect-mode?mode=' + newMode, { method: 'POST' });
+        await fetch(apiPrefix + '/collect-mode?mode=' + newMode, { method: 'POST' });
         fetchStatus();
     });
 
@@ -1038,7 +1046,7 @@
     });
 
     document.getElementById('btnClear').addEventListener('click', async function() {
-        await fetch('api/profiler/events', { method: 'DELETE' });
+        await fetch(apiPrefix + '/events', { method: 'DELETE' });
         allEvents = [];
         selectedEvent = null;
         document.getElementById('eventDetail').classList.remove('active');
@@ -1063,7 +1071,7 @@
         modal.classList.add('active');
         body.innerHTML = '<div class="thread-empty">Loading...</div>';
         try {
-            const res = await fetch('api/profiler/threads');
+            const res = await fetch(apiPrefix + '/threads');
             const threads = await res.json();
             if (threads.length === 0) {
                 body.innerHTML = '<div class="thread-empty">No active API threads</div>';
