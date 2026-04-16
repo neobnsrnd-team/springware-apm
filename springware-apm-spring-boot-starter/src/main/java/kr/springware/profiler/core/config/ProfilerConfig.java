@@ -9,6 +9,7 @@ public class ProfilerConfig {
     private long monitoringIntervalMs = 5000;
     private int maxEvents = 1000;
     private volatile String collectMode = "all"; // "all" or "issues-only"
+    private boolean dashboardTriggerEnabled = false;
 
     public String getCollectMode() {
         return collectMode;
@@ -44,6 +45,14 @@ public class ProfilerConfig {
 
     public void setMaxEvents(int maxEvents) {
         this.maxEvents = maxEvents;
+    }
+
+    public boolean isDashboardTriggerEnabled() {
+        return dashboardTriggerEnabled;
+    }
+
+    public void setDashboardTriggerEnabled(boolean dashboardTriggerEnabled) {
+        this.dashboardTriggerEnabled = dashboardTriggerEnabled;
     }
 
     public static class Threshold {

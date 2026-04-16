@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1a2e'/><circle cx='10' cy='22' r='4' fill='%2300d4ff'/><circle cx='16' cy='16' r='4' fill='%2300ff88'/><circle cx='22' cy='10' r='4' fill='%23ffa500'/></svg>">
     <title>Springware APM - xLog Tracer</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -27,10 +28,11 @@
             font-weight: 600;
         }
         .pill.cpu { background: rgba(0,212,255,0.15); color: #00d4ff; }
-        .pill.heap { background: rgba(255,165,0,0.15); color: #ffa500; }
+        .pill.memory { background: rgba(168,85,247,0.15); color: #a855f7; }
+        .pill.tps { background: rgba(255,107,107,0.15); color: #ff6b6b; }
         .pill.threads { background: rgba(0,255,136,0.15); color: #00ff88; cursor: pointer; }
         .pill.threads:hover { background: rgba(0,255,136,0.25); }
-        .pill.events { background: rgba(0,255,136,0.15); color: #00ff88; }
+        .pill.events { background: rgba(136,136,136,0.15); color: #888888; }
 
         /* Layout */
         .main-layout {
@@ -116,7 +118,7 @@
         }
         .line-legend-dot.cpu { background: #00d4ff; }
         .line-legend-dot.memory { background: #a855f7; }
-        .line-legend-dot.threads { background: #00ff88; }
+        .line-legend-dot.tps { background: #ff6b6b; }
 
         /* Thread Dump Modal */
         .thread-modal-overlay {
@@ -388,7 +390,8 @@
     <h1><span style="color:#00ff88">Spring</span><span style="color:#ffa500">ware</span> <span style="color:#e0e0e0">APM</span> - <span style="color:#aaa">x</span><span style="color:#00d4ff">Log</span> <span style="color:#e0e0e0">Tracer</span></h1>
     <div class="status-pills">
         <span class="pill cpu" id="pillCpu">CPU: --</span>
-        <span class="pill heap" id="pillHeap">Heap: --</span>
+        <span class="pill memory" id="pillHeap">Heap: --</span>
+        <span class="pill tps" id="pillTps">TPS: 0</span>
         <span class="pill threads" id="pillThreads" title="Click to view active thread dump">Threads: 0</span>
         <span class="pill events" id="pillEvents">Events: 0</span>
     </div>
@@ -432,7 +435,7 @@
             <span><span class="legend-dot error"></span> Error (5xx)</span>
         </div>
         <div class="line-chart-header">
-            <h2>CPU & Memory Usage</h2>
+            <h2>CPU & Memory & TPS</h2>
         </div>
         <div class="line-canvas-wrap">
             <canvas id="lineChart"></canvas>
@@ -440,13 +443,13 @@
         <div class="line-legend">
             <span><span class="line-legend-dot cpu"></span> CPU Process</span>
             <span><span class="line-legend-dot memory"></span> Heap Memory</span>
-            <span style="cursor:pointer;" id="legendThreads" title="Click to view thread dump"><span class="line-legend-dot threads"></span> Active Threads (<span id="threadCountLabel">0</span>)</span>
+            <span><span class="line-legend-dot tps"></span> TPS</span>
         </div>
     </div>
 
     <!-- Right Panel -->
     <div class="right-panel">
-        <div class="trigger-section">
+        <div class="trigger-section" style="display:none;">
             <h3>Trigger Problems</h3>
             <div class="trigger-group">
                 <label>CPU Intensive</label>
@@ -511,6 +514,7 @@
     let hoveredDot = null;
     let selectedEvent = null;
     let activeFilters = new Set();
+    let triggerEnabled = false;
 
     // Base path - derive from current page to support any context path
     // Supports both /api/profiler/dashboard and /apm.html access patterns
@@ -519,6 +523,10 @@
         .replace(/\/apm\.html$/, '')
         .replace(/\/apm\.html\/$/, '') || '';
     const apiPrefix = (basePath === '/' ? '' : basePath) + '/api/profiler';
+
+    function fmtNum(n) {
+        return n.toLocaleString();
+    }
 
     // Persisted UI settings (localStorage)
     const STORAGE_KEY = 'springware-apm.ui';
@@ -771,20 +779,6 @@
         // Filter data within time window
         const visible = statusHistory.filter(d => d.timestamp >= timeStart);
 
-        // Right Y-axis: thread count (auto-scale)
-        let threadMax = 10;
-        if (visible.length > 0) {
-            const maxVal = Math.max(...visible.map(d => d.activeThreads || 0));
-            threadMax = Math.max(10, Math.ceil(maxVal / 5) * 5);
-        }
-        lineCtx.textAlign = 'left';
-        lineCtx.fillStyle = '#00ff8888';
-        for (let i = 0; i <= ySteps; i++) {
-            const y = LINE_PADDING.top + (plotH / ySteps) * i;
-            const val = threadMax - (threadMax / ySteps) * i;
-            lineCtx.fillText(Math.round(val), w - LINE_PADDING.right + 6, y + 3);
-        }
-
         // X-axis time labels
         lineCtx.textAlign = 'center';
         lineCtx.fillStyle = '#555';
@@ -833,7 +827,22 @@
 
         drawLine(visible, 'cpuProcess', '#00d4ff', 100);
         drawLine(visible, 'heapPercent', '#a855f7', 100);
-        drawLine(visible, 'activeThreads', '#00ff88', threadMax);
+
+        // TPS: use far right Y-axis (second column of numbers)
+        let tpsMax = 10;
+        if (visible.length > 0) {
+            const maxTps = Math.max(...visible.map(d => d.tps || 0));
+            tpsMax = Math.max(10, Math.ceil(maxTps / 10) * 10);
+        }
+        lineCtx.textAlign = 'left';
+        lineCtx.fillStyle = '#ff6b6b';
+        const labelX = w - LINE_PADDING.right + 8;
+        for (let i = 0; i <= ySteps; i++) {
+            const y = LINE_PADDING.top + (plotH / ySteps) * i;
+            const val = tpsMax - (tpsMax / ySteps) * i;
+            lineCtx.fillText(Math.round(val), labelX, y + 3);
+        }
+        drawLine(visible, 'tps', '#ff6b6b', tpsMax);
     }
 
     // Mouse hover on canvas
@@ -971,18 +980,19 @@
             const res = await fetch(apiPrefix + '/status');
             const s = await res.json();
             document.getElementById('pillCpu').textContent = `CPU: ${s.cpuProcess >= 0 ? s.cpuProcess + '%' : 'N/A'}`;
-            document.getElementById('pillHeap').textContent = `Heap: ${s.heapUsedMb}/${s.heapMaxMb}MB (${s.heapPercent}%)`;
-            document.getElementById('pillEvents').textContent = `Events: ${s.eventCount}`;
+            document.getElementById('pillHeap').textContent = `Heap: ${fmtNum(s.heapUsedMb)}/${fmtNum(s.heapMaxMb)}MB (${s.heapPercent}%)`;
+            document.getElementById('pillEvents').textContent = `Events: ${fmtNum(s.eventCount)}`;
+            document.getElementById('pillTps').textContent = `TPS: ${fmtNum(s.tps || 0)}`;
             const activeThreads = s.activeThreads || 0;
-            document.getElementById('pillThreads').textContent = `Threads: ${activeThreads}`;
-            document.getElementById('threadCountLabel').textContent = activeThreads;
+            document.getElementById('pillThreads').textContent = `Threads: ${fmtNum(activeThreads)}`;
             // Record history for line chart
             const now = Date.now();
             statusHistory.push({
                 timestamp: now,
                 cpuProcess: s.cpuProcess >= 0 ? s.cpuProcess : 0,
                 heapPercent: s.heapPercent || 0,
-                activeThreads: activeThreads
+                activeThreads: activeThreads,
+                tps: s.tps || 0
             });
             // Keep max 40 points (~2 min at 3s intervals)
             const cutoff = now - TIME_WINDOW_MS;
@@ -998,6 +1008,13 @@
                 modeBtn.textContent = 'All';
                 modeBtn.style.color = '#00ff88';
                 modeBtn.style.borderColor = '#00ff8844';
+            }
+
+            // Show/hide trigger section based on config
+            if (!triggerEnabled && s.dashboardTriggerEnabled) {
+                triggerEnabled = true;
+                const triggerSection = document.querySelector('.trigger-section');
+                if (triggerSection) triggerSection.style.display = 'block';
             }
         } catch(e) { /* ignore */ }
     }
@@ -1049,6 +1066,7 @@
         await fetch(apiPrefix + '/events', { method: 'DELETE' });
         allEvents = [];
         selectedEvent = null;
+        statusHistory = [];
         document.getElementById('eventDetail').classList.remove('active');
         renderEventList();
     });
@@ -1114,7 +1132,6 @@
     }
 
     document.getElementById('pillThreads').addEventListener('click', showThreadDump);
-    document.getElementById('legendThreads').addEventListener('click', showThreadDump);
     document.getElementById('threadModalClose').addEventListener('click', function() {
         document.getElementById('threadModal').classList.remove('active');
     });

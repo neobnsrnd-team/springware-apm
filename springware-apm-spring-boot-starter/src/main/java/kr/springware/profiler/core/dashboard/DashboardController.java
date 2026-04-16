@@ -69,6 +69,8 @@ public class DashboardController {
         status.put("eventCount", store.size());
         status.put("collectMode", config.getCollectMode());
         status.put("activeThreads", threadTracker.getActiveCount());
+        status.put("dashboardTriggerEnabled", config.isDashboardTriggerEnabled());
+        status.put("tps", store.getTps(1));
         return status;
     }
 

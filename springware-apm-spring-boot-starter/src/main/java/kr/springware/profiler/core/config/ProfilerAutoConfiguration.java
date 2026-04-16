@@ -66,8 +66,9 @@ public class ProfilerAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ProfilingFilter profilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor,
-                                              ThresholdDetector detector, ActiveThreadTracker threadTracker) {
-        return new ProfilingFilter(cpuMonitor, memoryMonitor, detector, threadTracker);
+                                              ThresholdDetector detector, ActiveThreadTracker threadTracker,
+                                              ProfileEventStore store) {
+        return new ProfilingFilter(cpuMonitor, memoryMonitor, detector, threadTracker, store);
     }
 
     @Bean

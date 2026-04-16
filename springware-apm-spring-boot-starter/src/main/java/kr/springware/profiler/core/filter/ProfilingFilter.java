@@ -8,6 +8,7 @@ import kr.springware.profiler.core.detector.ThresholdDetector;
 import kr.springware.profiler.core.monitor.ActiveThreadTracker;
 import kr.springware.profiler.core.monitor.CpuMonitor;
 import kr.springware.profiler.core.monitor.MemoryMonitor;
+import kr.springware.profiler.core.store.ProfileEventStore;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -21,13 +22,16 @@ public class ProfilingFilter extends OncePerRequestFilter {
     private final MemoryMonitor memoryMonitor;
     private final ThresholdDetector detector;
     private final ActiveThreadTracker threadTracker;
+    private final ProfileEventStore store;
 
     public ProfilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor,
-                           ThresholdDetector detector, ActiveThreadTracker threadTracker) {
+                           ThresholdDetector detector, ActiveThreadTracker threadTracker,
+                           ProfileEventStore store) {
         this.cpuMonitor = cpuMonitor;
         this.memoryMonitor = memoryMonitor;
         this.detector = detector;
         this.threadTracker = threadTracker;
+        this.store = store;
     }
 
     @Override
@@ -53,6 +57,7 @@ public class ProfilingFilter extends OncePerRequestFilter {
         }
 
         threadTracker.register(endpoint);
+        store.recordRequest();
         long startTime = System.currentTimeMillis();
         long startCpuTime = cpuMonitor.getCurrentThreadCpuTimeNanos();
         long startHeap = memoryMonitor.getHeapUsage().getUsed();
