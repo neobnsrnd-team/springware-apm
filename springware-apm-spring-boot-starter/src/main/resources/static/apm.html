@@ -34,6 +34,9 @@
         .pill.threads:hover { background: rgba(0,255,136,0.25); }
         .pill.events { background: rgba(136,136,136,0.15); color: #888888; }
 
+        #btnMonitoring { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid #00ff8844; }
+        #btnMonitoring.off { background: rgba(255,107,107,0.15); color: #ff6b6b; border: 1px solid #ff6b6b44; }
+
         /* Layout */
         .main-layout {
             display: grid;
@@ -387,7 +390,10 @@
 <body>
 
 <div class="top-bar">
-    <h1><span style="color:#00ff88">Spring</span><span style="color:#ffa500">ware</span> <span style="color:#e0e0e0">APM</span> - <span style="color:#aaa">x</span><span style="color:#00d4ff">Log</span> <span style="color:#e0e0e0">Tracer</span></h1>
+    <h1>
+        <span style="color:#00ff88">Spring</span><span style="color:#ffa500">ware</span> <span style="color:#e0e0e0">APM</span> - <span style="color:#aaa">x</span><span style="color:#00d4ff">Log</span> <span style="color:#e0e0e0">Tracer</span>
+        <button id="btnMonitoring" style="margin-left:16px;padding:4px 12px;font-size:11px;border-radius:12px;cursor:pointer;">Monitoring: <span id="monitoringStatus">ON</span></button>
+    </h1>
     <div class="status-pills">
         <span class="pill cpu" id="pillCpu">CPU: --</span>
         <span class="pill memory" id="pillHeap">Heap: --</span>
@@ -979,6 +985,23 @@
         try {
             const res = await fetch(apiPrefix + '/status');
             const s = await res.json();
+            
+            // Sync monitoring status first
+            const monitoringEnabled = s.monitoringEnabled;
+            document.getElementById('monitoringStatus').textContent = monitoringEnabled ? 'ON' : 'OFF';
+            document.getElementById('btnMonitoring').classList.toggle('off', !monitoringEnabled);
+            
+            if (!monitoringEnabled) {
+                // Monitoring OFF - show placeholder and stop polling
+                document.getElementById('pillCpu').textContent = 'CPU: --';
+                document.getElementById('pillHeap').textContent = 'Heap: --/--MB (--)';
+                document.getElementById('pillEvents').textContent = 'Events: --';
+                document.getElementById('pillTps').textContent = 'TPS: --';
+                document.getElementById('pillThreads').textContent = 'Threads: --';
+                stopPolling();
+                return;
+            }
+            
             document.getElementById('pillCpu').textContent = `CPU: ${s.cpuProcess >= 0 ? s.cpuProcess + '%' : 'N/A'}`;
             document.getElementById('pillHeap').textContent = `Heap: ${fmtNum(s.heapUsedMb)}/${fmtNum(s.heapMaxMb)}MB (${s.heapPercent}%)`;
             document.getElementById('pillEvents').textContent = `Events: ${fmtNum(s.eventCount)}`;
@@ -1071,6 +1094,19 @@
         renderEventList();
     });
 
+    document.getElementById('btnMonitoring').addEventListener('click', async function() {
+        const currentEnabled = document.getElementById('monitoringStatus').textContent === 'ON';
+        const newEnabled = !currentEnabled;
+        await fetch(apiPrefix + '/monitoring?enabled=' + newEnabled, { method: 'POST' });
+        document.getElementById('monitoringStatus').textContent = newEnabled ? 'ON' : 'OFF';
+        document.getElementById('btnMonitoring').classList.toggle('off', !newEnabled);
+        if (newEnabled) {
+            startPolling();
+        } else {
+            stopPolling();
+        }
+    });
+
     document.getElementById('yMaxSelect').addEventListener('change', function() {
         yMax = parseInt(this.value);
         saveSettings();
@@ -1147,8 +1183,28 @@
     drawChart();
     fetchEvents();
     fetchStatus();
-    setInterval(fetchEvents, 2000);
-    setInterval(fetchStatus, 3000);
+    let eventsInterval, statusInterval;
+    
+    function startPolling() {
+        stopPolling();
+        eventsInterval = setInterval(fetchEvents, 2000);
+        statusInterval = setInterval(fetchStatus, 3000);
+    }
+    
+    function stopPolling() {
+        if (eventsInterval) clearInterval(eventsInterval);
+        if (statusInterval) clearInterval(statusInterval);
+    }
+
+    // Init
+    loadSettings();
+    resizeCanvas();
+    resizeLineCanvas();
+    window.addEventListener('resize', function() { resizeCanvas(); resizeLineCanvas(); });
+    drawChart();
+    fetchEvents();
+    fetchStatus();
+    startPolling();
 
 })();
 </script>

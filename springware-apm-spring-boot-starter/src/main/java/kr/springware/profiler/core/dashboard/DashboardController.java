@@ -70,6 +70,7 @@ public class DashboardController {
         status.put("collectMode", config.getCollectMode());
         status.put("activeThreads", threadTracker.getActiveCount());
         status.put("dashboardTriggerEnabled", config.isDashboardTriggerEnabled());
+        status.put("monitoringEnabled", config.isMonitoringEnabled());
         status.put("tps", store.getTps(1));
         return status;
     }
@@ -83,6 +84,12 @@ public class DashboardController {
     public Map<String, String> setCollectMode(@RequestParam String mode) {
         config.setCollectMode(mode);
         return Map.of("collectMode", config.getCollectMode());
+    }
+
+    @PostMapping("/monitoring")
+    public Map<String, Object> toggleMonitoring(@RequestParam boolean enabled) {
+        config.setMonitoringEnabled(enabled);
+        return Map.of("monitoringEnabled", config.isMonitoringEnabled());
     }
 
     @DeleteMapping("/events")

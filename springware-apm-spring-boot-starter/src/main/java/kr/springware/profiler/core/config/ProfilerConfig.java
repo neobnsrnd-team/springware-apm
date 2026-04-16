@@ -8,8 +8,9 @@ public class ProfilerConfig {
     private Threshold threshold = new Threshold();
     private long monitoringIntervalMs = 5000;
     private int maxEvents = 1000;
-    private volatile String collectMode = "all"; // "all" or "issues-only"
+    private volatile String collectMode = "all";
     private boolean dashboardTriggerEnabled = false;
+    private volatile boolean monitoringEnabled = true;
 
     public String getCollectMode() {
         return collectMode;
@@ -55,10 +56,19 @@ public class ProfilerConfig {
         this.dashboardTriggerEnabled = dashboardTriggerEnabled;
     }
 
+    public boolean isMonitoringEnabled() {
+        return monitoringEnabled;
+    }
+
+    public void setMonitoringEnabled(boolean monitoringEnabled) {
+        this.monitoringEnabled = monitoringEnabled;
+    }
+
     public static class Threshold {
         private long responseTimeMs = 3000;
         private double cpuPercent = 80;
         private double memoryPercent = 85;
+        private long memorySpikeMb = 50;
 
         public long getResponseTimeMs() {
             return responseTimeMs;
@@ -82,6 +92,14 @@ public class ProfilerConfig {
 
         public void setMemoryPercent(double memoryPercent) {
             this.memoryPercent = memoryPercent;
+        }
+
+        public long getMemorySpikeMb() {
+            return memorySpikeMb;
+        }
+
+        public void setMemorySpikeMb(long memorySpikeMb) {
+            this.memorySpikeMb = memorySpikeMb;
         }
     }
 }

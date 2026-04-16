@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import kr.springware.profiler.core.config.ProfilerConfig;
 import kr.springware.profiler.core.detector.ThresholdDetector;
 import kr.springware.profiler.core.monitor.ActiveThreadTracker;
 import kr.springware.profiler.core.monitor.CpuMonitor;
@@ -23,15 +24,17 @@ public class ProfilingFilter extends OncePerRequestFilter {
     private final ThresholdDetector detector;
     private final ActiveThreadTracker threadTracker;
     private final ProfileEventStore store;
+    private final ProfilerConfig config;
 
     public ProfilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor,
                            ThresholdDetector detector, ActiveThreadTracker threadTracker,
-                           ProfileEventStore store) {
+                           ProfileEventStore store, ProfilerConfig config) {
         this.cpuMonitor = cpuMonitor;
         this.memoryMonitor = memoryMonitor;
         this.detector = detector;
         this.threadTracker = threadTracker;
         this.store = store;
+        this.config = config;
     }
 
     @Override
@@ -40,17 +43,17 @@ public class ProfilingFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.startsWith("/api/profiler")
                 || path.startsWith("/h2-console")
-                || path.equals("/")
-                || path.startsWith("/static")
-                || path.endsWith(".html")
-                || path.endsWith(".css")
-                || path.endsWith(".js")
-                || path.endsWith(".ico");
+                || path.startsWith("/favicon");
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                   FilterChain filterChain) throws ServletException, IOException {
+        if (!config.isMonitoringEnabled()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String endpoint = request.getMethod() + " " + request.getRequestURI();
         if (request.getQueryString() != null) {
             endpoint += "?" + request.getQueryString();
@@ -60,6 +63,7 @@ public class ProfilingFilter extends OncePerRequestFilter {
         store.recordRequest();
         long startTime = System.currentTimeMillis();
         long startCpuTime = cpuMonitor.getCurrentThreadCpuTimeNanos();
+        long startAllocBytes = memoryMonitor.getCurrentThreadAllocatedBytes();
 
         try {
             filterChain.doFilter(request, response);
@@ -67,12 +71,14 @@ public class ProfilingFilter extends OncePerRequestFilter {
             threadTracker.unregister();
             long elapsedMs = System.currentTimeMillis() - startTime;
             long cpuTimeNanos = cpuMonitor.getCurrentThreadCpuTimeNanos() - startCpuTime;
+            long allocDeltaBytes = memoryMonitor.getCurrentThreadAllocatedBytes() - startAllocBytes;
 
             detector.evaluateRequest(
                     endpoint,
                     request.getMethod(),
                     elapsedMs,
                     cpuTimeNanos,
+                    allocDeltaBytes,
                     response.getStatus()
             );
         }

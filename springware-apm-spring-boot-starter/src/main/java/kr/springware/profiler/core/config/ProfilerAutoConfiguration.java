@@ -67,14 +67,14 @@ public class ProfilerAutoConfiguration {
     @ConditionalOnMissingBean
     public ProfilingFilter profilingFilter(CpuMonitor cpuMonitor, MemoryMonitor memoryMonitor,
                                               ThresholdDetector detector, ActiveThreadTracker threadTracker,
-                                              ProfileEventStore store) {
-        return new ProfilingFilter(cpuMonitor, memoryMonitor, detector, threadTracker, store);
+                                              ProfileEventStore store, ProfilerConfig config) {
+        return new ProfilingFilter(cpuMonitor, memoryMonitor, detector, threadTracker, store, config);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public MonitoringScheduler monitoringScheduler(ThresholdDetector detector) {
-        return new MonitoringScheduler(detector);
+    public MonitoringScheduler monitoringScheduler(ThresholdDetector detector, ProfilerConfig config) {
+        return new MonitoringScheduler(detector, config);
     }
 
     @Bean
