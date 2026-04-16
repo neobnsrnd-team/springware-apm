@@ -59,7 +59,6 @@ public class ProfilerConfig {
         private long responseTimeMs = 3000;
         private double cpuPercent = 80;
         private double memoryPercent = 85;
-        private long memorySpikeMb = 50;
 
         public long getResponseTimeMs() {
             return responseTimeMs;
@@ -83,14 +82,6 @@ public class ProfilerConfig {
 
         public void setMemoryPercent(double memoryPercent) {
             this.memoryPercent = memoryPercent;
-        }
-
-        public long getMemorySpikeMb() {
-            return memorySpikeMb;
-        }
-
-        public void setMemorySpikeMb(long memorySpikeMb) {
-            this.memorySpikeMb = memorySpikeMb;
         }
     }
 }

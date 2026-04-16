@@ -24,7 +24,7 @@ public class ThresholdDetector {
     }
 
     public void evaluateRequest(String endpoint, String httpMethod, long elapsedMs,
-                                long cpuTimeNanos, long memoryDeltaBytes, int httpStatus) {
+                                long cpuTimeNanos, int httpStatus) {
         var threshold = config.getThreshold();
         List<ProfileEvent> detected = new ArrayList<>();
 
@@ -54,18 +54,8 @@ public class ThresholdDetector {
             ));
         }
 
-        // Memory spike detection
-        long memoryDeltaMb = memoryDeltaBytes / (1024 * 1024);
-        if (memoryDeltaMb > threshold.getMemorySpikeMb()) {
-            IssueSeverity severity = memoryDeltaMb > threshold.getMemorySpikeMb() * 3
-                    ? IssueSeverity.CRITICAL : IssueSeverity.WARNING;
-            detected.add(new ProfileEvent(
-                    IssueCategory.MEMORY, severity,
-                    String.format("Memory spike: %dMB (threshold: %dMB)", memoryDeltaMb, threshold.getMemorySpikeMb()),
-                    endpoint, httpMethod, elapsedMs, httpStatus,
-                    Map.of("memoryDeltaMb", memoryDeltaMb, "thresholdMb", threshold.getMemorySpikeMb())
-            ));
-        }
+        // Memory spike detection removed - JVM heap is shared resource,
+        // per-request memory delta cannot be accurately measured without thread-local allocation sampling
 
         // If nothing alarming, still record INFO for XLog (unless issues-only mode)
         if (detected.isEmpty()) {
@@ -74,7 +64,7 @@ public class ThresholdDetector {
                         IssueCategory.SLOW_EXECUTION, IssueSeverity.INFO,
                         String.format("Request completed in %dms", elapsedMs),
                         endpoint, httpMethod, elapsedMs, httpStatus,
-                        Map.of("elapsedMs", elapsedMs, "cpuTimeMs", cpuTimeMs, "memoryDeltaMb", memoryDeltaMb)
+                        Map.of("elapsedMs", elapsedMs, "cpuTimeMs", cpuTimeMs)
                 ));
             }
         }

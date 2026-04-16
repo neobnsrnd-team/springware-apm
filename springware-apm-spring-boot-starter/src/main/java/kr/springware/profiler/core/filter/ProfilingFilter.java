@@ -60,7 +60,6 @@ public class ProfilingFilter extends OncePerRequestFilter {
         store.recordRequest();
         long startTime = System.currentTimeMillis();
         long startCpuTime = cpuMonitor.getCurrentThreadCpuTimeNanos();
-        long startHeap = memoryMonitor.getHeapUsage().getUsed();
 
         try {
             filterChain.doFilter(request, response);
@@ -68,14 +67,12 @@ public class ProfilingFilter extends OncePerRequestFilter {
             threadTracker.unregister();
             long elapsedMs = System.currentTimeMillis() - startTime;
             long cpuTimeNanos = cpuMonitor.getCurrentThreadCpuTimeNanos() - startCpuTime;
-            long heapDelta = memoryMonitor.getHeapUsage().getUsed() - startHeap;
 
             detector.evaluateRequest(
                     endpoint,
                     request.getMethod(),
                     elapsedMs,
                     cpuTimeNanos,
-                    heapDelta,
                     response.getStatus()
             );
         }
